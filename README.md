@@ -1,7 +1,7 @@
 gauge.js
 ========
 
-100% native and cool looking animated JavaScript/CoffeScript gauge.
+100% native, animated JavaScript vehicle gauges.
 
  * No images, no external CSS - pure canvas
  * No dependencies
@@ -14,29 +14,35 @@ gauge.js
 ## Usage
 
 ```javascript
-var opts = {
-  angle: 0.15, /// The span of the gauge arc
-  lineWidth: 0.44, // The line thickness
-  pointer: {
-    length: 0.9, // Relative to gauge radius
-    strokeWidth: 0.035 // The thickness
-  },
-  colorStart: '#6FADCF',   // Colors
-  colorStop: '#8FC0DA',    // just experiment with them
-  strokeColor: '#E0E0E0'   // to see which ones work best for you
+var gauge_opts = {
+    angle: -0.15, //span of the gauge arc
+    lineWidth: 0.2, //tick background line thickness
+    radiusScale: 0.85, //relative radius
+    pointer: {
+        length: 0.7, //pointer length relative to gauge radius
+        strokeWidth: 0.025, //pointer thickness
+        color: '#333333DD' //pointer color
+    },
+    target_options: {
+        distFromCenter: 0.63,
+        sizeScale: 1,
+        color: '#00445599'    
+    },
+    background: {
+        color: '#FFFFFF99', //background color for entire gauge
+        scale: 1.5
+    },
+    limitMax: true,     //if false, max value increases automatically if value > maxValue
+    limitMin: true,     //if true, the min value of the gauge will be fixed
+    colorStart: '#37abc8ff',   //tick background color
+    colorStop: '#37abc8ff',
+    strokeColor: '#E0E0E0',  //tick background color
+    generateGradient: false,
+    highDpiSupport: true     //high resolution support
 };
 var target = document.getElementById('foo'); // your canvas element
-var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
-gauge.maxValue = 3000; // set max gauge value
+var gauge = new Gauge(target).setOptions(gauge_opts); // create sexy gauge!
+gauge.maxValue = 13.5; // set max gauge value
 gauge.setMinValue(0);  // set min value
-gauge.set(1250); // set actual value
+gauge.set(8); // set actual value
 ```
-
-For an interactive demo and a list of all supported options please refer to the [project's homepage](http://bernii.github.com/gauge.js).
-
-## Wrappers
-
-gauge.js can be wrapped to a number of frameworks. Here are some examples:
-
-* **Vue**
-  * [vgauge](https://github.com/amroessam/vgauge)

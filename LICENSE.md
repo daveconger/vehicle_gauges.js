@@ -1,6 +1,9 @@
 MIT License
 
-Copyright (c) 2019 Bernard Kobos
+Copyright for portions of this file are held by Bernard Kobos (2019) as part
+of project gauge.js
+
+All other copyright for this file are held by David Conger (2021)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
