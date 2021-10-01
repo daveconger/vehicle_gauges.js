@@ -3,6 +3,8 @@ gauge.js
 
 100% native, animated JavaScript vehicle gauges.
 
+![gauge1](assets/gauge1.png)
+
  * No images, no external CSS - pure canvas
  * No dependencies
  * Highly configurable
@@ -11,7 +13,7 @@ gauge.js
  * Works in all major browsers
  * MIT License
 
-## Usage
+## Example Usage
 
 ```javascript
 var gauge_opts = {
