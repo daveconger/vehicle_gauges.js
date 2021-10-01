@@ -489,25 +489,85 @@
       Gauge.prototype.paddingBottom = 0.1;
   
       Gauge.prototype.percentColors = null;
+
+      Gauge.prototype.conversionMatrix = {
+        'm/s': {
+          'MPH': 2.23694,
+          'KPH': 3.6,
+          'm/s': 1
+        },
+        'MPH': {
+          'MPH': 1,
+          'KPH': 1.60934,
+          'm/s': 0.44704
+        },
+        'KPH': {
+          'MPH': 0.62137119,
+          'KPH': 1,
+          'm/s': 0.2777777
+        }
+      }
   
       Gauge.prototype.options = {
-        colorStart: "#6fadcf",
+        colorStart: "#37abc8ff",
         colorStop: void 0,
         gradientType: 0,
+        generateGradient: false,
+        highDpiSupport: true,
         strokeColor: "#e0e0e0",
+        background: {
+          color: '#FFFFFF99', //background color for entire gauge
+          scale: 1.5
+        },
         pointer: {
-          length: 0.8,
-          strokeWidth: 0.035,
+          length: 0.7,
+          strokeWidth: 0.025,
+          color: '#333333DD', //pointer color
           iconScale: 1.0,
           targ: false
         },
-        angle: 0.15,
-        lineWidth: 0.44,
-        radiusScale: 1.0,
+        angle: -0.15,
+        lineWidth: 0.2,
+        radiusScale: 0.85,
         fontSize: 40,
-        limitMax: false,
-        limitMin: false,
-        units: ''
+        limitMax: true,
+        limitMin: true,
+        defaultInputUnits: 'MPH', //input units when none is specified {'m/s','MPH','KPH'}
+        primaryDisplayUnits: 'MPH', //units for labels around outside
+        maxPrimaryTicks: 10,
+        primaryLabels: {
+          font: "10px sans-serif",
+          labels: [],  //prints labels at these values
+          color: "#000000",  // Optional: Label text color
+          fractionDigits: 0  // Optional: Numerical precision. 0=round off.
+        },
+        hidePrimaryLabels: false,
+        secondaryDisplayUnits: 'KPH', //units for labels around inside
+        maxSecondaryTicks: 7,
+        secondaryLabels: {
+          font: "9px sans-serif",
+          labels: [],  //prints labels at these values
+          color: "#000000",  // Optional: Label text color
+          fractionDigits: 0  // Optional: Numerical precision. 0=round off.
+        },
+        secondaryLabelsRadiusOffset: 0.35,
+        hideSecondaryLabels: false,
+        countBy: {
+          'MPH': 5,
+          'KPH': 5,
+          'm/s': 2
+        },
+        ticks: {
+          divisions: null, //this can be fractional
+          divWidth: 1.6,
+          divLength: 0.83,
+          divColor: '#333333',
+          subDivisions: 2,
+          subLength: 0.5,
+          subWidth: 0.6,
+          subColor: '#666666'
+        },
+        hideTicks: false
       };
   
       function Gauge(canvas) {
@@ -531,6 +591,28 @@
         var gauge, j, len, phi, ref;
         if (options == null) {
           options = null;
+        } else {
+          // Check if units have changed
+          var input_units_changed = options.defaultInputUnits &&
+            (this.options.defaultInputUnits != options.defaultInputUnits);
+          var primary_display_units_changed = options.primaryDisplayUnits &&
+            (this.options.primaryDisplayUnits != options.primaryDisplayUnits);
+          var secondary_display_units_changed = options.secondaryDisplayUnits &&
+            (this.options.secondaryDisplayUnits != options.secondaryDisplayUnits);
+
+          // Check if max/min values have changed
+          var range_changed = false;
+          if (options.maxValue && (this.maxValue != options.maxValue)) {
+            this.maxValue = options.maxValue;
+            range_changed = true;
+          }
+          if (options.minValue && (this.minValue != options.minValue)) {
+            this.minValue = options.minValue;
+            range_changed = true;
+          }
+
+          // Check if tick divisions are supplied
+          var tick_divs_not_supplied = !options.ticks || !options.ticks.divisions;
         }
         Gauge.__super__.setOptions.call(this, options);
         this.configPercentColors();
@@ -542,6 +624,31 @@
         this.availableHeight = this.canvas.height * (1 - this.paddingTop - this.paddingBottom);
         this.lineWidth = this.availableHeight * this.options.lineWidth;
         this.radius = (this.availableHeight - this.lineWidth / 2) / (1.0 + this.extraPadding);
+
+        // If units or range has changed, update labels and ticks
+        if (input_units_changed || range_changed) {
+          // Generate primary labels
+          if (this.options.primaryLabels.labels.length == 0 || primary_display_units_changed) {
+
+            var primary_labels = this.generateLabels(this.options.primaryDisplayUnits,this.options.maxPrimaryTicks);
+            this.options.primaryLabels.labels = primary_labels.labels;
+
+            // Set number of divisions to number of primary labels
+            if (tick_divs_not_supplied) {
+              this.options.ticks.divisions = primary_labels.divs;
+            }
+
+          }
+
+          // Generate secondary labels
+          if (this.options.secondaryLabels.labels.length == 0 || secondary_display_units_changed) {
+
+            this.options.secondaryLabels.labels =
+              this.generateLabels(this.options.secondaryDisplayUnits,this.options.maxSecondaryTicks).labels;
+
+          }
+        }
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         ref = this.gp;
         for (j = 0, len = ref.length; j < len; j++) {
@@ -551,6 +658,36 @@
         }
         this.render();
         return this;
+      };
+
+      Gauge.prototype.generateLabels = function(display_units,max_number) {
+        // Determine number of labels and count-by
+        var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][display_units];
+        var display_max = this.maxValue*unit_conversion_scale;
+        var num_major_labels = display_max;
+        var count_by = this.options.countBy[display_units];
+        while (num_major_labels > max_number) {
+            num_major_labels = display_max/count_by;
+            count_by *= 2;
+        }
+        count_by /= 2; //undo last *=
+
+        // Populate label array
+        var labels = [];
+        for (var i = 0; i <= display_max; i+=count_by) {
+          if (i == 0) {
+            labels.push({
+              label: display_units,
+              value: i/unit_conversion_scale
+            });
+          } else {
+            labels.push({
+              label: i,
+              value: i/unit_conversion_scale
+            });
+          }
+        }
+        return {labels: labels, divs: num_major_labels};
       };
   
       Gauge.prototype.configPercentColors = function() {
@@ -698,11 +835,15 @@
               rotationAngle = this.getAngle(value) - 3 * Math.PI / 2;
               this.ctx.rotate(rotationAngle);
 
-              // Add units
-              var suffix = '';
-              if (j==1 && this.options.units.length > 0) suffix = ' ' + this.options.units;
+              // Print units for first tick, otherwise print value
+              var label = '';
+              if (j==0 && this.options.defaultInputUnits.length > 0) {
+                label = this.options.defaultInputUnits;
+              } else {
+                label = formatNumber(value, staticLabels.fractionDigits);
+              }
 
-              this.ctx.fillText(formatNumber(value, staticLabels.fractionDigits)+suffix, 0, -radius - this.lineWidth / 2);
+              this.ctx.fillText(label, 0, -radius - this.lineWidth / 2);
               this.ctx.rotate(-rotationAngle);
             }
           }
@@ -794,11 +935,11 @@
         }
         
         // Draw gauge labels
-        if (this.options.staticLabels) {
-          this.renderStaticLabels(this.options.staticLabels, w, h, radius);
-          if (this.options.secondaryLabels) {
-            this.renderStaticLabels(this.options.secondaryLabels, w, h, radius/(2 + this.options.secondaryLabels.offsetScale));
-          }
+        if (!this.options.hidePrimaryLabels) {
+          this.renderStaticLabels(this.options.primaryLabels, w, h, radius);
+        }
+        if (!this.options.hideSecondaryLabels) {
+          this.renderStaticLabels(this.options.secondaryLabels, w, h, radius*this.options.secondaryLabelsRadiusOffset);
         }
 
         // Draw gauge zones (tick background)
@@ -868,8 +1009,8 @@
         }
 
         // Draw ticks
-        if (this.options.renderTicks) {
-          this.renderTicks(this.options.renderTicks, w, h, radius);
+        if (!this.options.hideTicks) {
+          this.renderTicks(this.options.ticks, w, h, radius);
         }
 
         this.ctx.restore();

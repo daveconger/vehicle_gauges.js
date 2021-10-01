@@ -7,91 +7,21 @@
     <script type="text/javascript">
         // Add guage
         var gauge_opts = {
-            angle: -0.15, //span of the gauge arc
-            lineWidth: 0.2, //tick background line thickness
-            radiusScale: 0.85, //relative radius
-            pointer: {
-                length: 0.7, //pointer length relative to gauge radius
-                strokeWidth: 0.025, //pointer thickness
-                color: '#333333DD' //pointer color
-            },
+            minValue: 0,
+            maxValue: 13.5,
+            defaultInputUnits: 'm/s', //input units when none is specified {'m/s','MPH','KPH'}
+            primaryDisplayUnits: 'MPH', //units for labels around outside
+            secondaryDisplayUnits: 'm/s', //units for labels around inside
             target_options: {
                 distFromCenter: 0.63,
                 sizeScale: 1,
                 color: '#00445599'    
-            },
-            background: {
-                color: '#FFFFFF99', //background color for entire gauge
-                scale: 1.5
-            },
-            limitMax: true,     //if false, max value increases automatically if value > maxValue
-            limitMin: true,     //if true, the min value of the gauge will be fixed
-            colorStart: '#37abc8ff',   //tick background color
-            colorStop: '#37abc8ff',
-            strokeColor: '#E0E0E0',  //tick background color
-            generateGradient: false,
-            highDpiSupport: true     //high resolution support
+            }
         };
         var target = document.getElementById('foo'); //your canvas element
         var gauge = new Gauge(target).setOptions(gauge_opts); //create gauge
 
-        // Update speed min/max
-        speed = 13.5;
-        gauge.maxValue = speed; //there is no setter for max
-        gauge.setMinValue(0); //using the setter here forces the update
-
-        // Determine number of ticks
-        var num_major_ticks = speed*2.23694;
-        var count_by = 5;
-        while (num_major_ticks > 9)
-        {
-            num_major_ticks = speed*2.23694/count_by;
-            count_by *= 2;
-        }
-        count_by /= 2; //undo last *=
-
-        // Populate tick label array
-        var gauge_tick_labels = [];
-        for (var i = 0; i <= speed*2.23694; i+=count_by) {
-            gauge_tick_labels.push({value:i/2.23694,label:(i==0?'MPH':i)});
-        }
-
-        var num_secondary_labels = speed;
-        var count_by = 1;
-        while (num_secondary_labels > 7) {
-            num_secondary_labels = num_secondary_labels/2;
-            count_by *= 2;
-        }
-
-        var secondary_labels = [];
-        for (var i = 0; i <= speed; i+=count_by) {
-            secondary_labels.push({value:i,label:(i==0?'m/s':i)});
-        }
-
         gauge.setOptions({
-            renderTicks: {
-                divisions: num_major_ticks, //this can be fractional
-                divWidth: 1.6,
-                divLength: 0.83,
-                divColor: '#333333',
-                subDivisions: 2,
-                subLength: 0.5,
-                subWidth: 0.6,
-                subColor: '#666666'
-            },
-            staticLabels: {
-                font: "10px sans-serif",
-                labels: gauge_tick_labels,  //prints labels at these values
-                color: "#000000",  // Optional: Label text color
-                fractionDigits: 0  // Optional: Numerical precision. 0=round off.
-            },
-            secondaryLabels: {
-                font: "9px sans-serif",
-                labels: secondary_labels,
-                color: "#000000",
-                fractionDigits: 0,
-                offsetScale: 0.6
-            },
             upperZone: {
                 show: true,
                 startValue: 10,
