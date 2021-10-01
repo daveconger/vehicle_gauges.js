@@ -1,10 +1,11 @@
-gauge.js
+vehicle_gauges.js
 ========
 
-100% native, animated JavaScript vehicle gauges.
+Native, animated JavaScript gauges for vehicle speed.
 
 ![gauge1](assets/gauge1.png)
 
+ * Speedometer gauge with cruise set point (target speed indicator)
  * No images, no external CSS - pure canvas
  * No dependencies
  * Highly configurable
@@ -30,5 +31,5 @@ var gauge_opts = {
 };
 var target = document.getElementById('foo'); // your canvas element
 var gauge = new Gauge(target).setOptions(gauge_opts); // create gauge
-gauge.set(8); // set actual value
+gauge.set([6,5.5]); //set current and target values
 ```
