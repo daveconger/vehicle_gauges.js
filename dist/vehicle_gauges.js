@@ -471,7 +471,8 @@
           subWidth: 0.6,
           subColor: '#666666'
         },
-        hideTicks: false
+        hideTicks: false,
+        hideTextDisplay: false
       };
   
       function Gauge(canvas) {
@@ -706,8 +707,7 @@
             }
           });
         }
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.render();
+        this.update(true);
       };
   
       Gauge.prototype.getAngle = function(value) {
@@ -857,7 +857,7 @@
       };
   
       Gauge.prototype.render = function() {
-        var displayedAngle, fillStyle, gauge, h, j, l, len, len1, max, min, radius, ref, ref1, scaleMutate, tmpRadius, w, zone;
+        var displayedAngle, fillStyle, h, j, len, max, min, radius, ref, scaleMutate, tmpRadius, w, zone;
         w = this.canvas.width / 2;
         h = (this.canvas.height * this.paddingTop + this.availableHeight) - ((this.radius + this.lineWidth / 2) * this.extraPadding);
         displayedAngle = this.getAngle(this.displayedValue);
@@ -964,23 +964,24 @@
         this.ctx.translate(w, h);
 
         // Draw text
-        var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][this.options.primaryDisplayUnits];
-        this.ctx.font = 'bold ' + 18*this.displayScale + 'px sans-serif';
-        this.ctx.fillStyle = '#000000'
-        this.ctx.textBaseline = "baseline";
-        this.ctx.textAlign = "right";
-        this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),18,h/2-2);
-        this.ctx.font = 7*this.displayScale + 'px sans-serif';
-        this.ctx.fillStyle = '#000000'
-        this.ctx.textBaseline = "baseline";
-        this.ctx.textAlign = "left";
-        this.ctx.fillText(this.options.primaryDisplayUnits,20,h/2-2);
-
-        ref1 = this.gp;
-        for (l = 0, len1 = ref1.length; l < len1; l++) {
-          gauge = ref1[l];
-          gauge.update(true);
+        if (!this.options.hideTextDisplay) {
+          var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][this.options.primaryDisplayUnits];
+          this.ctx.font = 'bold ' + 18*this.displayScale + 'px sans-serif';
+          this.ctx.fillStyle = '#000000'
+          this.ctx.textBaseline = "baseline";
+          this.ctx.textAlign = "right";
+          this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),18,h/2-2);
+          this.ctx.font = 7*this.displayScale + 'px sans-serif';
+          this.ctx.fillStyle = '#000000'
+          this.ctx.textBaseline = "baseline";
+          this.ctx.textAlign = "left";
+          this.ctx.fillText(this.options.primaryDisplayUnits,20,h/2-2);
         }
+
+        this.gp.forEach(function(gp) {
+          gp.update(true);
+        });
+        
         return this.ctx.translate(-w, -h);
       };
   
