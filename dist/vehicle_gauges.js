@@ -550,14 +550,10 @@
           }
         }
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        ref = this.gp;
-        for (j = 0, len = ref.length; j < len; j++) {
-          gauge = ref[j];
-          if (j==0) gauge.setOptions(this.options.pointer);
-          gauge.render();
+        if (this.gp && this.gp.length) {
+          this.gp[0].setOptions(this.options.pointer);
         }
-        this.render();
+
         return this;
       };
 
@@ -710,6 +706,8 @@
             }
           });
         }
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.render();
       };
   
       Gauge.prototype.getAngle = function(value) {
