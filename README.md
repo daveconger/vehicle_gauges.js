@@ -31,7 +31,7 @@ var gauge_opts = {
 };
 var target = document.getElementById('foo'); // your canvas element
 var gauge = new Gauge(target).setOptions(gauge_opts); // create gauge
-gauge.set([6,5.5]); //set current and target values
-gauge.set(30,'KPH');
-gauge.set([20,24],'MPH');
+gauge.setSpeed(30,'KPH');
+gauge.setTarget(13,'MPH');
+gauge.setSpeed(8);
 ```

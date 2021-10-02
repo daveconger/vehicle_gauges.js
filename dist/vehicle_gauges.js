@@ -137,15 +137,21 @@
       }
   
       ValueUpdater.prototype.update = function(force) {
-        var diff;
         if (force == null) {
           force = false;
         }
+
+        if (this.gp) {
+          this.gp.forEach(function(gp) {
+            force = force || gp.displayedValue !== gp.value;
+          });
+        }
+
         if (force || this.displayedValue !== this.value) {
           if (this.ctx && this.clear) {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
           }
-          diff = this.value - this.displayedValue;
+          var diff = this.value - this.displayedValue;
           if (Math.abs(diff / this.animationSpeed) <= 0.001) {
             this.displayedValue = this.value;
           } else {
@@ -610,20 +616,40 @@
           return results;
         }
       };
-  
-      Gauge.prototype.set = function(value,units) {
-        var gp, i, j, l, len, m, ref, ref1, val;
-        if (!(value instanceof Array)) {
-          value = [value];
+
+      Gauge.prototype.parseValueUpdateRanges = function(value,units) {
+        // Parse and convert value
+        value = this.parseValue(value)
+        if (units) {
+          value *= this.conversionMatrix[units][this.options.defaultInputUnits];
         }
-        for (i = j = 0, ref = value.length - 1; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-          var val_scale = 1;
-          if (units) val_scale = this.conversionMatrix[units][this.options.defaultInputUnits];
-          value[i] = this.parseValue(value[i])*val_scale;
+
+        // Clamp to or adjust max and min values
+        if (value > this.maxValue) {
+          if (this.options.limitMax) {
+            value = this.maxValue;
+          } else {
+            this.maxValue = value + 1;
+          }
+        } else if (value < this.minValue) {
+          if (this.options.limitMin) {
+            value = this.minValue;
+          } else {
+            this.minValue = value - 1;
+          }
         }
-        if (value.length > this.gp.length) { //add new pointer
-          for (i = l = 0, ref1 = value.length - this.gp.length; 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {
-            gp = new GaugePointer(this);
+        return value;
+      };
+
+      Gauge.prototype.setTarget = function(value,units) {
+        // Remove target pointer if no value and force update
+        if (value !== 0 && !value && this.gp.length > 1) {
+          this.gp = this.gp.slice(0,1);
+          this.forceUpdate = true;
+        } else {
+          // Add new target pointer if it doesn't exist
+          if (this.gp.length == 1) {
+            var gp = new GaugePointer(this);
             gp.setOptions({
               length: this.options.target_options.distFromCenter,
               strokeWidth: this.options.target_options.sizeScale,
@@ -632,34 +658,39 @@
             });
             this.gp.push(gp);
           }
-        } else if (value.length < this.gp.length) { //remove pointers (last-in, first-out)
-          this.gp = this.gp.slice(0,this.gp.length - value.length);
-        }
-        i = 0;
-        for (m = 0, len = value.length; m < len; m++) {
-          val = value[m];
-          if (val > this.maxValue) {
-            if (this.options.limitMax) {
-              val = this.maxValue;
-            } else {
-              this.maxValue = val + 1;
-            }
-          } else if (val < this.minValue) {
-            if (this.options.limitMin) {
-              val = this.minValue;
-            } else {
-              this.minValue = val - 1;
-            }
-          }
-          this.gp[i].value = val;
-          this.gp[i++].setOptions({
+          
+          // Parse and convert value
+          value = this.parseValueUpdateRanges(value,units);
+
+          // Update pointer
+          this.gp[1].value = value;
+          this.gp[1].setOptions({
             minValue: this.minValue,
             maxValue: this.maxValue,
             angle: this.options.angle
           });
         }
-        // Use the clamped first element of value as the overall gauge value
-        this.value = Math.max(Math.min(value[0], this.maxValue), this.minValue);
+
+        AnimationUpdater.add(this);
+        AnimationUpdater.run(this.forceUpdate);
+        return this.forceUpdate = false;
+      };
+  
+      Gauge.prototype.setSpeed = function(value,units) {
+        // Parse and convert value
+        value = this.parseValueUpdateRanges(value,units);
+
+        // Update overall gauge value
+        this.value = value;
+
+        // Update pointer
+        this.gp[0].value = value;
+        this.gp[0].setOptions({
+          minValue: this.minValue,
+          maxValue: this.maxValue,
+          angle: this.options.angle
+        });
+
         AnimationUpdater.add(this);
         AnimationUpdater.run(this.forceUpdate);
         return this.forceUpdate = false;
