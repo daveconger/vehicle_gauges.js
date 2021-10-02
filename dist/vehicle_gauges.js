@@ -475,7 +475,6 @@
       };
   
       function Gauge(canvas) {
-        var h, w;
         this.canvas = canvas;
         Gauge.__super__.constructor.call(this);
         this.percentColors = null;
@@ -483,10 +482,8 @@
           this.canvas = window.G_vmlCanvasManager.initElement(this.canvas);
         }
         this.ctx = this.canvas.getContext('2d');
-        h = this.canvas.clientHeight;
-        w = this.canvas.clientWidth;
-        this.canvas.height = h;
-        this.canvas.width = w;
+        this.canvas.height = this.canvas.clientHeight;
+        this.canvas.width = this.canvas.clientWidth;
         this.gp = [new GaugePointer(this)];
         this.setOptions();
       }
@@ -949,17 +946,18 @@
         // Update gauge pointers
         this.ctx.translate(w, h);
 
-        // // Draw text
-        // this.ctx.font = 'bold ' + 16*this.displayScale + 'px sans-serif';
-        // this.ctx.fillStyle = '#000000'
-        // this.ctx.textBaseline = "baseline";
-        // this.ctx.textAlign = "right";
-        // this.ctx.fillText(formatNumber(this.displayedValue,0),15,h/2-2);
-        // this.ctx.font = 7*this.displayScale + 'px sans-serif';
-        // this.ctx.fillStyle = '#000000'
-        // this.ctx.textBaseline = "baseline";
-        // this.ctx.textAlign = "left";
-        // this.ctx.fillText('MPH',16,h/2-2);
+        // Draw text
+        var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][this.options.primaryDisplayUnits];
+        this.ctx.font = 'bold ' + 18*this.displayScale + 'px sans-serif';
+        this.ctx.fillStyle = '#000000'
+        this.ctx.textBaseline = "baseline";
+        this.ctx.textAlign = "right";
+        this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),18,h/2-2);
+        this.ctx.font = 7*this.displayScale + 'px sans-serif';
+        this.ctx.fillStyle = '#000000'
+        this.ctx.textBaseline = "baseline";
+        this.ctx.textAlign = "left";
+        this.ctx.fillText(this.options.primaryDisplayUnits,20,h/2-2);
 
         ref1 = this.gp;
         for (l = 0, len1 = ref1.length; l < len1; l++) {
