@@ -713,13 +713,15 @@
         }
       };
   
-      Gauge.prototype.set = function(value) {
+      Gauge.prototype.set = function(value,units) {
         var gp, i, j, l, len, m, ref, ref1, val;
         if (!(value instanceof Array)) {
           value = [value];
         }
         for (i = j = 0, ref = value.length - 1; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
-          value[i] = this.parseValue(value[i]);
+          var val_scale = 1;
+          if (units) val_scale = this.conversionMatrix[units][this.options.defaultInputUnits];
+          value[i] = this.parseValue(value[i])*val_scale;
         }
         if (value.length > this.gp.length) { //add new pointer
           for (i = l = 0, ref1 = value.length - this.gp.length; 0 <= ref1 ? l < ref1 : l > ref1; i = 0 <= ref1 ? ++l : --l) {

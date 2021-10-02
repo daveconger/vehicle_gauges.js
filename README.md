@@ -19,7 +19,7 @@ Native, animated JavaScript gauges for vehicle speed.
 ```javascript
 var gauge_opts = {
     minValue: 0,
-    maxValue: 13.5,
+    maxValue: 21,
     defaultInputUnits: 'm/s', //input units when none is specified {'m/s','MPH','KPH'}
     primaryDisplayUnits: 'MPH', //units for labels around outside
     secondaryDisplayUnits: 'm/s', //units for labels around inside
@@ -32,4 +32,6 @@ var gauge_opts = {
 var target = document.getElementById('foo'); // your canvas element
 var gauge = new Gauge(target).setOptions(gauge_opts); // create gauge
 gauge.set([6,5.5]); //set current and target values
+gauge.set(30,'KPH');
+gauge.set([20,24],'MPH');
 ```
