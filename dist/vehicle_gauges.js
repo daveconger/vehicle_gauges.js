@@ -22,10 +22,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
-//
-//
+
 (function() {
-    var AnimatedText, AnimatedTextFactory, Bar, BaseDonut, BaseGauge, Donut, Gauge, GaugePointer, TextRenderer, ValueUpdater, addCommas, cutHex, formatNumber, mergeObjects, secondsToString,
+    var BaseGauge, Gauge, GaugePointer, TextRenderer, ValueUpdater, addCommas, cutHex, formatNumber, mergeObjects,
       slice = [].slice,
       hasProp = {}.hasOwnProperty,
       extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -76,23 +75,6 @@
         };
       }
     })();
-  
-    secondsToString = function(sec) {
-      var hr, min;
-      hr = Math.floor(sec / 3600);
-      min = Math.floor((sec - (hr * 3600)) / 60);
-      sec -= (hr * 3600) + (min * 60);
-      sec += '';
-      min += '';
-      while (min.length < 2) {
-        min = '0' + min;
-      }
-      while (sec.length < 2) {
-        sec = '0' + sec;
-      }
-      hr = hr ? hr + ':' : '';
-      return hr + min + ':' + sec;
-    };
   
     formatNumber = function() {
       var digits, num, value;
@@ -277,56 +259,6 @@
   
     })();
   
-    AnimatedText = (function(superClass) {
-      extend(AnimatedText, superClass);
-  
-      AnimatedText.prototype.displayedValue = 0;
-  
-      AnimatedText.prototype.value = 0;
-  
-      AnimatedText.prototype.setVal = function(value) {
-        return this.value = 1 * value;
-      };
-  
-      function AnimatedText(elem1, text) {
-        this.elem = elem1;
-        this.text = text != null ? text : false;
-        AnimatedText.__super__.constructor.call(this);
-        if (this.elem === void 0) {
-          throw new Error('The element isn\'t defined.');
-        }
-        this.value = 1 * this.elem.innerHTML;
-        if (this.text) {
-          this.value = 0;
-        }
-      }
-  
-      AnimatedText.prototype.render = function() {
-        var textVal;
-        if (this.text) {
-          textVal = secondsToString(this.displayedValue.toFixed(0));
-        } else {
-          textVal = addCommas(formatNumber(this.displayedValue));
-        }
-        return this.elem.innerHTML = textVal;
-      };
-  
-      return AnimatedText;
-  
-    })(ValueUpdater);
-  
-    AnimatedTextFactory = {
-      create: function(objList) {
-        var elem, j, len, out;
-        out = [];
-        for (j = 0, len = objList.length; j < len; j++) {
-          elem = objList[j];
-          out.push(new AnimatedText(elem));
-        }
-        return out;
-      }
-    };
-  
     GaugePointer = (function(superClass) {
       extend(GaugePointer, superClass);
   
@@ -432,40 +364,6 @@
       return GaugePointer;
   
     })(ValueUpdater);
-  
-    Bar = (function() {
-      function Bar(elem1) {
-        this.elem = elem1;
-      }
-  
-      Bar.prototype.updateValues = function(arrValues) {
-        this.value = arrValues[0];
-        this.maxValue = arrValues[1];
-        this.avgValue = arrValues[2];
-        return this.render();
-      };
-  
-      Bar.prototype.render = function() {
-        var avgPercent, valPercent;
-        if (this.textField) {
-          this.textField.text(formatNumber(this.value));
-        }
-        if (this.maxValue === 0) {
-          this.maxValue = this.avgValue * 2;
-        }
-        valPercent = (this.value / this.maxValue) * 100;
-        avgPercent = (this.avgValue / this.maxValue) * 100;
-        $(".bar-value", this.elem).css({
-          "width": valPercent + "%"
-        });
-        return $(".typical-value", this.elem).css({
-          "width": avgPercent + "%"
-        });
-      };
-  
-      return Bar;
-  
-    })();
   
     Gauge = (function(superClass) {
       extend(Gauge, superClass);
@@ -1044,139 +942,6 @@
   
     })(BaseGauge);
   
-    BaseDonut = (function(superClass) {
-      extend(BaseDonut, superClass);
-  
-      BaseDonut.prototype.lineWidth = 15;
-  
-      BaseDonut.prototype.displayedValue = 0;
-  
-      BaseDonut.prototype.value = 33;
-  
-      BaseDonut.prototype.maxValue = 80;
-  
-      BaseDonut.prototype.minValue = 0;
-  
-      BaseDonut.prototype.options = {
-        lineWidth: 0.10,
-        colorStart: "#6f6ea0",
-        colorStop: "#c0c0db",
-        strokeColor: "#eeeeee",
-        shadowColor: "#d5d5d5",
-        angle: 0.35,
-        radiusScale: 1.0
-      };
-  
-      function BaseDonut(canvas) {
-        this.canvas = canvas;
-        BaseDonut.__super__.constructor.call(this);
-        if (typeof G_vmlCanvasManager !== 'undefined') {
-          this.canvas = window.G_vmlCanvasManager.initElement(this.canvas);
-        }
-        this.ctx = this.canvas.getContext('2d');
-        this.setOptions();
-        this.render();
-      }
-  
-      BaseDonut.prototype.getAngle = function(value) {
-        return (1 - this.options.angle) * Math.PI + ((value - this.minValue) / (this.maxValue - this.minValue)) * ((2 + this.options.angle) - (1 - this.options.angle)) * Math.PI;
-      };
-  
-      BaseDonut.prototype.setOptions = function(options) {
-        if (options == null) {
-          options = null;
-        }
-        BaseDonut.__super__.setOptions.call(this, options);
-        this.lineWidth = this.canvas.height * this.options.lineWidth;
-        this.radius = this.options.radiusScale * (this.canvas.height / 2 - this.lineWidth / 2);
-        return this;
-      };
-  
-      BaseDonut.prototype.set = function(value) {
-        this.value = this.parseValue(value);
-        if (this.value > this.maxValue) {
-          if (this.options.limitMax) {
-            this.value = this.maxValue;
-          } else {
-            this.maxValue = this.value;
-          }
-        } else if (this.value < this.minValue) {
-          if (this.options.limitMin) {
-            this.value = this.minValue;
-          } else {
-            this.minValue = this.value;
-          }
-        }
-        AnimationUpdater.add(this);
-        AnimationUpdater.run(this.forceUpdate);
-        return this.forceUpdate = false;
-      };
-  
-      BaseDonut.prototype.render = function() {
-        var displayedAngle, grdFill, h, start, stop, w;
-        displayedAngle = this.getAngle(this.displayedValue);
-        w = this.canvas.width / 2;
-        h = this.canvas.height / 2;
-        if (this.textField) {
-          this.textField.render(this);
-        }
-        grdFill = this.ctx.createRadialGradient(w, h, 39, w, h, 70);
-        grdFill.addColorStop(0, this.options.colorStart);
-        grdFill.addColorStop(1, this.options.colorStop);
-        start = this.radius - this.lineWidth / 2;
-        stop = this.radius + this.lineWidth / 2;
-        this.ctx.strokeStyle = this.options.strokeColor;
-        this.ctx.beginPath();
-        this.ctx.arc(w, h, this.radius, (1 - this.options.angle) * Math.PI, (2 + this.options.angle) * Math.PI, false);
-        this.ctx.lineWidth = this.lineWidth;
-        this.ctx.lineCap = "round";
-        this.ctx.stroke();
-        this.ctx.strokeStyle = grdFill;
-        this.ctx.beginPath();
-        this.ctx.arc(w, h, this.radius, (1 - this.options.angle) * Math.PI, displayedAngle, false);
-        return this.ctx.stroke();
-      };
-  
-      return BaseDonut;
-  
-    })(BaseGauge);
-  
-    Donut = (function(superClass) {
-      extend(Donut, superClass);
-  
-      function Donut() {
-        return Donut.__super__.constructor.apply(this, arguments);
-      }
-  
-      Donut.prototype.strokeGradient = function(w, h, start, stop) {
-        var grd;
-        grd = this.ctx.createRadialGradient(w, h, start, w, h, stop);
-        grd.addColorStop(0, this.options.shadowColor);
-        grd.addColorStop(0.12, this.options._orgStrokeColor);
-        grd.addColorStop(0.88, this.options._orgStrokeColor);
-        grd.addColorStop(1, this.options.shadowColor);
-        return grd;
-      };
-  
-      Donut.prototype.setOptions = function(options) {
-        var h, start, stop, w;
-        if (options == null) {
-          options = null;
-        }
-        Donut.__super__.setOptions.call(this, options);
-        w = this.canvas.width / 2;
-        h = this.canvas.height / 2;
-        start = this.radius - this.lineWidth / 2;
-        stop = this.radius + this.lineWidth / 2;
-        this.options._orgStrokeColor = this.options.strokeColor;
-        this.options.strokeColor = this.strokeGradient(w, h, start, stop);
-        return this;
-      };
-  
-      return Donut;
-  
-    })(BaseDonut);
-  
     window.AnimationUpdater = {
       elements: [],
       animId: null,
@@ -1230,25 +995,17 @@
       define(function() {
         return {
           Gauge: Gauge,
-          Donut: Donut,
-          BaseDonut: BaseDonut,
           TextRenderer: TextRenderer
         };
       });
     } else if (typeof module !== 'undefined' && (module.exports != null)) {
       module.exports = {
         Gauge: Gauge,
-        Donut: Donut,
-        BaseDonut: BaseDonut,
         TextRenderer: TextRenderer
       };
     } else {
       window.Gauge = Gauge;
-      window.Donut = Donut;
-      window.BaseDonut = BaseDonut;
       window.TextRenderer = TextRenderer;
     }
   
   }).call(this);
-  
-  //# sourceMappingURL=gauge.js.map
