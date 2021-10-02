@@ -638,7 +638,7 @@
         return value;
       };
 
-      Gauge.prototype.setTarget = function(value,units) {
+      Gauge.prototype.setTargetSpeed = function(value,units) {
         // Remove target pointer if no value and force update
         if (value !== 0 && !value && this.gp.length > 1) {
           this.gp = this.gp.slice(0,1);
@@ -691,6 +691,25 @@
         AnimationUpdater.add(this);
         AnimationUpdater.run(this.forceUpdate);
         return this.forceUpdate = false;
+      };
+
+      Gauge.prototype.setLimitSpeed = function(value,units) {
+        if (value !== 0 && !value) {
+          this.setOptions({
+            upperZone: {
+                show: false
+            }
+          });
+        } else {
+          value = this.parseValueUpdateRanges(value,units);
+          this.setOptions({
+            upperZone: {
+                show: true,
+                startValue: value,
+                color: '#666666'
+            }
+          });
+        }
       };
   
       Gauge.prototype.getAngle = function(value) {
@@ -924,7 +943,7 @@
           this.ctx.arc(w, h, radius, displayedAngle, (2 - this.options.angle) * Math.PI, false);
           this.ctx.stroke();
 
-          // Draw upper zone (eg, grayed-out region to represent a dynamic max such as WP max speed)
+          // Draw upper zone (eg, grayed-out region to represent a dynamic max such as a speed limit)
           if (this.options.upperZone && this.options.upperZone.show) {
             this.ctx.strokeStyle = this.options.upperZone.color;
             this.ctx.beginPath();
