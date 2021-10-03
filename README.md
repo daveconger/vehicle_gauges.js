@@ -27,6 +27,7 @@ var gauge_opts = {
     defaultInputUnits: 'm/s', //input units when none is specified {'m/s','MPH','KPH'}
     primaryDisplayUnits: 'MPH', //units for labels around outside
     secondaryDisplayUnits: 'm/s', //units for labels around inside
+    numeralDisplayUnits: 'KPH', //units for numeral speed display, ''=match defaultInputUnits
     target_options: {
         distFromCenter: 0.85,
         sizeScale: 1,

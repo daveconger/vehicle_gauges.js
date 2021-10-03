@@ -430,7 +430,8 @@
         subColor: '#666666'
       },
       hideTicks: false,
-      hideTextDisplay: false,
+      numeralDisplayUnits: '', //units for numeral speed display, ''=match defaultInputUnits
+      hideNumeralDisplay: false,
       infoText: ''
     };
 
@@ -949,8 +950,12 @@
       this.ctx.translate(w, h);
 
       // Draw text
-      if (!this.options.hideTextDisplay) {
-        var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][this.options.primaryDisplayUnits];
+      if (!this.options.hideNumeralDisplay) {
+        var numeralDisplayUnits = this.options.primaryDisplayUnits;
+        if (this.options.numeralDisplayUnits.length) {
+          numeralDisplayUnits = this.options.numeralDisplayUnits;
+        }
+        var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][numeralDisplayUnits];
         this.ctx.font = 'bold ' + 15*this.displayScale*this.height/200 + 'px sans-serif';
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
@@ -960,7 +965,7 @@
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "left";
-        this.ctx.fillText(this.options.primaryDisplayUnits,17*this.height/200,this.height*0.235);
+        this.ctx.fillText(numeralDisplayUnits,17*this.height/200,this.height*0.235);
       }
 
       if (this.options.infoText.length > 0) {
