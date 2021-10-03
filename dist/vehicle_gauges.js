@@ -30,39 +30,34 @@
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
+  // Set up animation for browser
   (function() {
-    var browserRequestAnimationFrame, isCancelled, j, lastId, len, vendor, vendors;
-    vendors = ['ms', 'moz', 'webkit', 'o'];
-    for (j = 0, len = vendors.length; j < len; j++) {
-      vendor = vendors[j];
+    for (const vendor of ['ms', 'moz', 'webkit', 'o']) {
       if (window.requestAnimationFrame) {
         break;
       }
       window.requestAnimationFrame = window[vendor + 'RequestAnimationFrame'];
       window.cancelAnimationFrame = window[vendor + 'CancelAnimationFrame'] || window[vendor + 'CancelRequestAnimationFrame'];
     }
-    browserRequestAnimationFrame = null;
-    lastId = 0;
-    isCancelled = {};
     if (!requestAnimationFrame) {
+      var lastTime = 0;
       window.requestAnimationFrame = function(callback, element) {
-        var currTime, id, lastTime, timeToCall;
-        currTime = new Date().getTime();
-        timeToCall = Math.max(0, 16 - (currTime - lastTime));
-        id = window.setTimeout(function() {
+        var currTime = new Date().getTime();
+        var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+        lastTime = currTime + timeToCall;
+        return window.setTimeout(function() {
           return callback(currTime + timeToCall);
         }, timeToCall);
-        lastTime = currTime + timeToCall;
-        return id;
       };
       return window.cancelAnimationFrame = function(id) {
         return clearTimeout(id);
       };
     } else if (!window.cancelAnimationFrame) {
-      browserRequestAnimationFrame = window.requestAnimationFrame;
+      var browserRequestAnimationFrame = window.requestAnimationFrame;
+      var lastId = 0;
+      var isCancelled = {};
       window.requestAnimationFrame = function(callback, element) {
-        var myId;
-        myId = ++lastId;
+        var myId = ++lastId;
         browserRequestAnimationFrame(function() {
           if (!isCancelled[myId]) {
             return callback();
@@ -77,39 +72,34 @@
   })();
 
   formatNumber = function() {
-    var digits, num, value;
-    num = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    value = num[0];
-    digits = 0 || num[1];
+    var num = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+    var value = num[0];
+    var digits = 0 || num[1];
     return addCommas(value.toFixed(digits));
   };
 
   mergeObjects = function(obj1, obj2) {
-    var key, out, val;
-    out = {};
-    for (key in obj1) {
+    var out = {};
+    for (var key in obj1) {
       if (!hasProp.call(obj1, key)) continue;
-      val = obj1[key];
-      out[key] = val;
+      out[key] = obj1[key];
     }
-    for (key in obj2) {
+    for (var key in obj2) {
       if (!hasProp.call(obj2, key)) continue;
-      val = obj2[key];
-      out[key] = val;
+      out[key] = obj2[key];
     }
     return out;
   };
 
   addCommas = function(nStr) {
-    var rgx, x, x1, x2;
     nStr += '';
-    x = nStr.split('.');
-    x1 = x[0];
-    x2 = '';
+    var x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = '';
     if (x.length > 1) {
       x2 = '.' + x[1];
     }
-    rgx = /(\d+)(\d{3})/;
+    var rgx = /(\d+)(\d{3})/;
     while (rgx.test(x1)) {
       x1 = x1.replace(rgx, '$1' + ',' + '$2');
     }
@@ -175,29 +165,10 @@
     }
 
     BaseGauge.prototype.displayScale = 1;
-
     BaseGauge.prototype.forceUpdate = true;
 
     BaseGauge.prototype.setTextField = function(textField, fractionDigits) {
       return this.textField = textField instanceof TextRenderer ? textField : new TextRenderer(textField, fractionDigits);
-    };
-
-    BaseGauge.prototype.setMinValue = function(minValue, updateStartValue) {
-      var gauge, j, len, ref, results;
-      this.minValue = minValue;
-      if (updateStartValue == null) {
-        updateStartValue = true;
-      }
-      if (updateStartValue) {
-        this.displayedValue = this.minValue;
-        ref = this.gp || [];
-        results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
-          gauge = ref[j];
-          results.push(gauge.displayedValue = this.minValue);
-        }
-        return results;
-      }
     };
 
     BaseGauge.prototype.setOptions = function(options) {
@@ -269,9 +240,7 @@
     extend(GaugePointer, superClass);
 
     GaugePointer.prototype.displayedValue = 0;
-
     GaugePointer.prototype.value = 0;
-
     GaugePointer.prototype.options = {
       strokeWidth: 0.035,
       length: 0.1,
@@ -281,7 +250,6 @@
       iconAngle: 0,
       targ: false
     };
-
     GaugePointer.prototype.img = null;
 
     function GaugePointer(gauge1) {
@@ -402,7 +370,6 @@
         'm/s': 0.2777777
       }
     }
-
     Gauge.prototype.options = {
       colorStart: "#37abc8ff",
       colorStop: void 0,
@@ -556,7 +523,7 @@
       }
 
       if (this.gp && this.gp.length) {
-        this.gp[0].setOptions(this.options.pointer);
+        this.gp[0].setOptions(this.options.pointer); //TODO: why do i need to do this here?
       }
 
       return this;
