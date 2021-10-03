@@ -300,8 +300,8 @@
           options = null;
         }
         this.options = mergeObjects(this.options, options);
-        this.length = 2 * this.gauge.radius * this.gauge.options.radiusScale * this.options.length;
-        this.strokeWidth = this.canvas.height * this.options.strokeWidth;
+        this.length = this.gauge.height * this.options.length/2;
+        this.strokeWidth = this.gauge.height * this.options.strokeWidth;
         this.maxValue = this.gauge.maxValue;
         this.minValue = this.gauge.minValue;
         this.animationSpeed = this.gauge.animationSpeed;
@@ -375,25 +375,16 @@
       extend(Gauge, superClass);
   
       Gauge.prototype.elem = null;
-  
-      Gauge.prototype.value = [20];
-  
-      Gauge.prototype.maxValue = 80;
-  
-      Gauge.prototype.minValue = 0;
-  
-      Gauge.prototype.displayedAngle = 0;
-  
-      Gauge.prototype.displayedValue = 0;
-  
-      Gauge.prototype.lineWidth = 40;
-  
-      Gauge.prototype.paddingTop = 0.1;
-  
-      Gauge.prototype.paddingBottom = 0.1;
-  
+      Gauge.prototype.height = 200;
+      Gauge.prototype.value = 20;  
+      Gauge.prototype.maxValue = 80;  
+      Gauge.prototype.minValue = 0;  
+      Gauge.prototype.displayedAngle = 0;  
+      Gauge.prototype.displayedValue = 0;  
+      Gauge.prototype.lineWidth = 40;  
+      Gauge.prototype.paddingTop = 0.1;  
+      Gauge.prototype.paddingBottom = 0.1;  
       Gauge.prototype.percentColors = null;
-
       Gauge.prototype.conversionMatrix = {
         'm/s': {
           'MPH': 2.23694,
@@ -418,21 +409,21 @@
         gradientType: 0,
         generateGradient: false,
         highDpiSupport: true,
-        strokeColor: "#e0e0e0",
+        strokeColor: "#e0e0e0", //tick background color
+        lineWidth: 0.12, //tick background width
         background: {
           color: '#FFFFFF99', //background color for entire gauge
-          scale: 1.5
+          scale: 1
         },
         pointer: {
-          length: 0.7,
-          strokeWidth: 0.025,
+          length: 0.95,
+          strokeWidth: 0.02,
           color: '#333333DD', //pointer color
           iconScale: 1.0,
           targ: false
         },
         angle: -0.15,
-        lineWidth: 0.2,
-        radiusScale: 0.85,
+        scale: 1,
         fontSize: 40,
         limitMax: true,
         limitMin: true,
@@ -440,7 +431,7 @@
         primaryDisplayUnits: 'MPH', //units for labels around outside
         maxPrimaryTicks: 10,
         primaryLabels: {
-          font: "10px sans-serif",
+          font: "7.5px sans-serif",
           labels: [],  //prints labels at these values
           color: "#000000",  // Optional: Label text color
           fractionDigits: 0  // Optional: Numerical precision. 0=round off.
@@ -449,7 +440,7 @@
         secondaryDisplayUnits: 'KPH', //units for labels around inside
         maxSecondaryTicks: 7,
         secondaryLabels: {
-          font: "9px sans-serif",
+          font: "6.5px sans-serif",
           labels: [],  //prints labels at these values
           color: "#000000",  // Optional: Label text color
           fractionDigits: 0  // Optional: Numerical precision. 0=round off.
@@ -490,7 +481,6 @@
       }
   
       Gauge.prototype.setOptions = function(options) {
-        var gauge, j, len, phi, ref;
         if (options == null) {
           options = null;
         } else {
@@ -516,16 +506,30 @@
           // Check if tick divisions are supplied
           var tick_divs_not_supplied = !options.ticks || !options.ticks.divisions;
         }
+
         Gauge.__super__.setOptions.call(this, options);
         this.configPercentColors();
         this.extraPadding = 0;
         if (this.options.angle < 0) {
-          phi = Math.PI * (1 + this.options.angle);
+          var phi = Math.PI * (1 + this.options.angle);
           this.extraPadding = Math.sin(phi);
         }
-        this.availableHeight = this.canvas.height * (1 - this.paddingTop - this.paddingBottom);
-        this.lineWidth = this.availableHeight * this.options.lineWidth;
-        this.radius = (this.availableHeight - this.lineWidth / 2) / (1.0 + this.extraPadding);
+        
+        this.height = this.canvas.height * this.options.scale;
+        this.lineWidth = this.height * this.options.lineWidth;
+        this.radius = 0.77*(this.height - this.lineWidth)/2;
+
+        // Determine origin (gauge rotation center)
+        if (!this.options.originX) {
+          this.originX = this.canvas.width/2;
+        } else {
+          this.originX = this.options.originX;
+        }
+        if (!this.options.originY) {
+          this.originY = this.canvas.height/2;
+        } else {
+          this.originY = this.options.originY;
+        }
 
         // If units or range has changed, update labels and ticks
         if (input_units_changed || range_changed) {
@@ -751,11 +755,11 @@
         var font, fontsize, j, len, match, re, ref, rest, rotationAngle, value;
         this.ctx.save();
         this.ctx.translate(w, h);
-        font = staticLabels.font || "10px Times";
+        font = staticLabels.font || "10px sans-serif";
         re = /\d+\.?\d?/;
         match = font.match(re)[0];
         rest = font.slice(match.length);
-        fontsize = parseFloat(match) * this.displayScale;
+        fontsize = parseFloat(match) * this.displayScale * this.height/200;
         this.ctx.font = fontsize + rest;
         this.ctx.fillStyle = staticLabels.color || "#000000";
         this.ctx.textBaseline = "bottom";
@@ -768,7 +772,7 @@
               font = value.font || staticLabels.font;
               match = font.match(re)[0];
               rest = font.slice(match.length);
-              fontsize = parseFloat(match) * this.displayScale;
+              fontsize = parseFloat(match) * this.displayScale * this.height/200;
               this.ctx.font = fontsize + rest;
               rotationAngle = this.getAngle(value.value) - 3 * Math.PI / 2;
               this.ctx.rotate(rotationAngle);
@@ -818,7 +822,7 @@
             if (currentDivision > this.maxValue) break; //don't draw ticks beyond max
             this.ctx.lineWidth = this.lineWidth * divLength;
             scaleMutate = (this.lineWidth / 2) * (1 - divLength);
-            tmpRadius = (this.radius * this.options.radiusScale) + scaleMutate;
+            tmpRadius = this.radius + scaleMutate;
             this.ctx.strokeStyle = divColor;
 
             // Make ticks same color as upper zone if it exists
@@ -839,7 +843,7 @@
                   if (currentSubDivision > this.maxValue) break; //don't draw ticks beyond max
                   this.ctx.lineWidth = this.lineWidth * subLength;
                   scaleMutate = (this.lineWidth / 2) * (1 - subLength);
-                  tmpRadius = (this.radius * this.options.radiusScale) + scaleMutate;
+                  tmpRadius = this.radius + scaleMutate;
                   this.ctx.strokeStyle = subColor;
                   this.ctx.beginPath();
                   this.ctx.arc(0, 0, tmpRadius, this.getAngle(currentSubDivision - subWidth), this.getAngle(currentSubDivision + subWidth), false);
@@ -857,11 +861,11 @@
       };
   
       Gauge.prototype.render = function() {
-        var displayedAngle, fillStyle, h, j, len, max, min, radius, ref, scaleMutate, tmpRadius, w, zone;
-        w = this.canvas.width / 2;
-        h = (this.canvas.height * this.paddingTop + this.availableHeight) - ((this.radius + this.lineWidth / 2) * this.extraPadding);
-        displayedAngle = this.getAngle(this.displayedValue);
-        radius = this.radius * this.options.radiusScale;
+        var fillStyle, j, len, max, min, ref, scaleMutate, tmpRadius, zone;
+        var w = this.originX;
+        var h = this.originY;
+        var displayedAngle = this.getAngle(this.displayedValue);
+        var radius = this.radius;
 
         // Draw background
         if (this.options.background) {
@@ -869,7 +873,7 @@
           this.ctx.translate(w, h);
           this.ctx.fillStyle = this.options.background.color;
           this.ctx.beginPath();
-          this.ctx.arc(0,0, radius * this.options.background.scale, 0, 2 * Math.PI, false);
+          this.ctx.arc(0,0, this.height*this.options.background.scale/2, 0, 2 * Math.PI, false);
           this.ctx.fill();
           this.ctx.restore();
         }
@@ -884,7 +888,7 @@
           this.renderStaticLabels(this.options.primaryLabels, w, h, radius);
         }
         if (!this.options.hideSecondaryLabels) {
-          this.renderStaticLabels(this.options.secondaryLabels, w, h, radius*this.options.secondaryLabelsRadiusOffset);
+          this.renderStaticLabels(this.options.secondaryLabels, w, h, radius-1.6*this.lineWidth);
         }
 
         // Draw gauge zones (tick background)
@@ -904,11 +908,11 @@
             if (this.options.limitMax && max > this.maxValue) {
               max = this.maxValue;
             }
-            tmpRadius = this.radius * this.options.radiusScale;
+            tmpRadius = radius;
             if (zone.height) {
               this.ctx.lineWidth = this.lineWidth * zone.height;
               scaleMutate = (this.lineWidth / 2) * (zone.offset || 1 - zone.height);
-              tmpRadius = (this.radius * this.options.radiusScale) + scaleMutate;
+              tmpRadius = radius + scaleMutate;
             }
             this.ctx.strokeStyle = zone.strokeStyle;
             this.ctx.beginPath();
@@ -966,16 +970,16 @@
         // Draw text
         if (!this.options.hideTextDisplay) {
           var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][this.options.primaryDisplayUnits];
-          this.ctx.font = 'bold ' + 18*this.displayScale + 'px sans-serif';
+          this.ctx.font = 'bold ' + 15*this.displayScale*this.height/200 + 'px sans-serif';
           this.ctx.fillStyle = '#000000'
           this.ctx.textBaseline = "baseline";
           this.ctx.textAlign = "right";
-          this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),18,h/2-2);
-          this.ctx.font = 7*this.displayScale + 'px sans-serif';
+          this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),15*this.height/200,this.height*0.245);
+          this.ctx.font = 5*this.displayScale*this.height/200 + 'px sans-serif';
           this.ctx.fillStyle = '#000000'
           this.ctx.textBaseline = "baseline";
           this.ctx.textAlign = "left";
-          this.ctx.fillText(this.options.primaryDisplayUnits,20,h/2-2);
+          this.ctx.fillText(this.options.primaryDisplayUnits,17*this.height/200,this.height*0.245);
         }
 
         this.gp.forEach(function(gp) {

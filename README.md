@@ -16,6 +16,10 @@ Native, animated JavaScript gauges for vehicle speed.
 
 ## Example Usage
 
+```html
+<canvas id="foo" width="250" height="210"></canvas>
+```
+
 ```javascript
 var gauge_opts = {
     minValue: 0,
@@ -24,10 +28,12 @@ var gauge_opts = {
     primaryDisplayUnits: 'MPH', //units for labels around outside
     secondaryDisplayUnits: 'm/s', //units for labels around inside
     target_options: {
-        distFromCenter: 0.63,
+        distFromCenter: 0.85,
         sizeScale: 1,
         color: '#00445599'    
-    }
+    },
+    originY: 260, //vertical rotation center (default is middle of canvas)
+    scale: 1.1 //percent of canvas height
 };
 var target = document.getElementById('foo'); // your canvas element
 var gauge = new Gauge(target).setOptions(gauge_opts); // create gauge
