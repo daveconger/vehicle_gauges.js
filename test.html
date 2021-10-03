@@ -2,10 +2,10 @@
 <head>
     <script src="dist/vehicle_gauges.js" type="text/javascript"></script>
 </head>
-<body bgcolor="#666666">
+<body bgcolor="#222222">
     <canvas id="foo" width="250" height="210"></canvas>
     <script type="text/javascript">
-        // Add guage
+        // Set options
         var gauge_opts = {
             minValue: 0,
             maxValue: 21,
@@ -17,8 +17,8 @@
                 sizeScale: 1,
                 color: '#00445599'    
             },
-            originY: 260,
-            scale: 1.1
+            originY: 240, //vertical rotation center (default is middle of canvas)
+            scale: 1.1 //percent of canvas height
         };
         var target = document.getElementById('foo'); //your canvas element
         var gauge = new Gauge(target).setOptions(gauge_opts); //create gauge
@@ -26,5 +26,6 @@
         gauge.setSpeed(9.5); // uses default input units
         gauge.setTargetSpeed(28,'KPH');
         gauge.setLimitSpeed(40,'MPH')
+        gauge.setInfo('Low Fuel');
     </script>
 </body>

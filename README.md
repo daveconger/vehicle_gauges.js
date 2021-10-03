@@ -32,12 +32,14 @@ var gauge_opts = {
         sizeScale: 1,
         color: '#00445599'    
     },
-    originY: 260, //vertical rotation center (default is middle of canvas)
+    originY: 240, //vertical rotation center (default is middle of canvas)
     scale: 1.1 //percent of canvas height
 };
-var target = document.getElementById('foo'); // your canvas element
-var gauge = new Gauge(target).setOptions(gauge_opts); // create gauge
+var target = document.getElementById('foo'); //your canvas element
+var gauge = new Gauge(target).setOptions(gauge_opts); //create gauge
+
 gauge.setSpeed(9.5); // uses default input units
 gauge.setTargetSpeed(28,'KPH');
 gauge.setLimitSpeed(40,'MPH')
+gauge.setInfo('Low Fuel');
 ```

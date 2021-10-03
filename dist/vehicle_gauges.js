@@ -430,7 +430,8 @@
         subColor: '#666666'
       },
       hideTicks: false,
-      hideTextDisplay: false
+      hideTextDisplay: false,
+      infoText: ''
     };
 
     function Gauge(canvas) {
@@ -676,6 +677,19 @@
               startValue: value,
               color: '#666666'
           }
+        });
+      }
+      this.update(true);
+    };
+
+    Gauge.prototype.setInfo = function(value) {
+      if (!value) {
+        this.setOptions({
+          infoText: ''
+        });
+      } else {
+        this.setOptions({
+          infoText: value
         });
       }
       this.update(true);
@@ -941,12 +955,23 @@
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "right";
-        this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),15*this.height/200,this.height*0.245);
+        this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),15*this.height/200,this.height*0.235);
         this.ctx.font = 5*this.displayScale*this.height/200 + 'px sans-serif';
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "left";
-        this.ctx.fillText(this.options.primaryDisplayUnits,17*this.height/200,this.height*0.245);
+        this.ctx.fillText(this.options.primaryDisplayUnits,17*this.height/200,this.height*0.235);
+      }
+
+      if (this.options.infoText.length > 0) {
+        this.ctx.fillStyle = '#CCCCCC99';
+        this.ctx.rect(-this.height*0.6/2,this.height*0.27,this.height*0.6,this.height*0.1);
+        this.ctx.fill();
+        this.ctx.font = 'italic ' + 5*this.displayScale*this.height/200 + 'px sans-serif';
+        this.ctx.fillStyle = '#000000'
+        this.ctx.textBaseline = "baseline";
+        this.ctx.textAlign = "center";
+        this.ctx.fillText(this.options.infoText,0,this.height*0.34);
       }
 
       this.gp.forEach(function(gp) {
