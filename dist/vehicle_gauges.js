@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 
 (function() {
-  var BaseGauge, Gauge, GaugePointer, TextRenderer, ValueUpdater, addCommas, cutHex, formatNumber, mergeObjects,
+  var BaseGauge, Gauge, TextRenderer, ValueUpdater, addCommas, cutHex, formatNumber, mergeObjects,
     slice = [].slice,
     hasProp = {}.hasOwnProperty,
     extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -129,12 +129,6 @@
     ValueUpdater.prototype.update = function(force) {
       if (force == null) {
         force = false;
-      }
-
-      if (this.gp) {
-        this.gp.forEach(function(gp) {
-          force = force || gp.displayedValue !== gp.value;
-        });
       }
 
       if (force || this.displayedValue !== this.value || this.displayedValueTarget !== this.valueTarget) {
@@ -242,89 +236,6 @@
 
   })();
 
-  GaugePointer = (function(superClass) {
-    extend(GaugePointer, superClass);
-
-    GaugePointer.prototype.displayedValue = 0;
-    GaugePointer.prototype.value = 0;
-    GaugePointer.prototype.options = {
-      strokeWidth: 0.035,
-      length: 0.1,
-      color: "#000000",
-      iconPath: null,
-      iconScale: 1.0,
-      iconAngle: 0
-    };
-    GaugePointer.prototype.img = null;
-
-    function GaugePointer(gauge1) {
-      this.gauge = gauge1;
-      if (this.gauge === void 0) {
-        throw new Error('The element isn\'t defined.');
-      }
-      this.ctx = this.gauge.ctx;
-      this.canvas = this.gauge.canvas;
-      GaugePointer.__super__.constructor.call(this, false, false);
-      this.setOptions();
-    }
-
-    GaugePointer.prototype.setOptions = function(options) {
-      if (options == null) {
-        options = null;
-      }
-      this.options = mergeObjects(this.options, options);
-      this.length = this.gauge.height * this.options.length/2;
-      this.strokeWidth = this.gauge.height * this.options.strokeWidth;
-      this.maxValue = this.gauge.maxValue;
-      this.minValue = this.gauge.minValue;
-      this.animationSpeed = this.gauge.animationSpeed;
-      this.options.angle = this.gauge.options.angle;
-      if (this.options.iconPath) {
-        this.img = new Image();
-        return this.img.src = this.options.iconPath;
-      }
-    };
-
-    GaugePointer.prototype.render = function() {
-      var angle, endX, endY, imgX, imgY, startX, startY, x, y;
-      angle = this.gauge.getAngle.call(this, this.displayedValue);
-      x = this.length * Math.cos(angle);
-      y = this.length * Math.sin(angle);
-
-      startX = this.strokeWidth * Math.cos(angle - Math.PI / 2);
-      startY = this.strokeWidth * Math.sin(angle - Math.PI / 2);
-      endX = this.strokeWidth * Math.cos(angle + Math.PI / 2);
-      endY = this.strokeWidth * Math.sin(angle + Math.PI / 2);
-      this.ctx.beginPath();
-      this.ctx.fillStyle = this.options.color;
-      this.ctx.save();
-      this.ctx.shadowColor = '#000000';
-      this.ctx.shadowBlur = 1;
-      this.ctx.shadowOffsetX = 2;
-      this.ctx.shadowOffsetY = 1;
-      this.ctx.beginPath();
-      this.ctx.moveTo(startX, startY);
-      this.ctx.lineTo(-x/10,-y/10);
-      this.ctx.lineTo(endX, endY);
-      this.ctx.lineTo(x, y);
-      this.ctx.moveTo(startX, startY);
-      this.ctx.fill();
-      this.ctx.restore();
-      if (this.img) {
-        imgX = Math.round(this.img.width * this.options.iconScale);
-        imgY = Math.round(this.img.height * this.options.iconScale);
-        this.ctx.save();
-        this.ctx.translate(x, y);
-        this.ctx.rotate(angle + Math.PI / 180.0 * (90 + this.options.iconAngle));
-        this.ctx.drawImage(this.img, -imgX / 2, -imgY / 2, imgX, imgY);
-        return this.ctx.restore();
-      }
-    };
-
-    return GaugePointer;
-
-  })(ValueUpdater);
-
   Gauge = (function(superClass) {
     extend(Gauge, superClass);
 
@@ -341,6 +252,7 @@
     Gauge.prototype.paddingTop = 0.1;  
     Gauge.prototype.paddingBottom = 0.1;  
     Gauge.prototype.percentColors = null;
+    Gauge.prototype.img = null;
     Gauge.prototype.conversionMatrix = {
       'm/s': {
         'MPH': 2.23694,
@@ -374,7 +286,9 @@
         length: 0.95,
         strokeWidth: 0.02,
         color: '#333333DD', //pointer color
-        iconScale: 1.0
+        iconScale: 1.0,
+        iconPath: null,
+        iconAngle: 0
       },
       angle: -0.15,
       scale: 1,
@@ -432,7 +346,6 @@
       this.ctx = this.canvas.getContext('2d');
       this.canvas.height = this.canvas.clientHeight;
       this.canvas.width = this.canvas.clientWidth;
-      this.gp = [new GaugePointer(this)];
       this.setOptions();
     }
 
@@ -511,8 +424,9 @@
         }
       }
 
-      if (this.gp && this.gp.length) {
-        this.gp[0].setOptions(this.options.pointer); //TODO: why do i need to do this here?
+      if (this.options.pointer.iconPath) {
+        this.img = new Image();
+        return this.img.src = this.options.pointer.iconPath;
       }
 
       return this;
@@ -612,19 +526,8 @@
     };
 
     Gauge.prototype.setSpeed = function(value,units) {
-      // Parse and convert value
-      value = this.parseValueUpdateRanges(value,units);
-
-      // Update overall gauge value
-      this.value = value;
-
-      // Update pointer
-      this.gp[0].value = value;
-      this.gp[0].setOptions({
-        minValue: this.minValue,
-        maxValue: this.maxValue,
-        angle: this.options.angle
-      });
+      // Parse and convert value and update speed
+      this.value = this.parseValueUpdateRanges(value,units);
 
       AnimationUpdater.add(this);
       AnimationUpdater.run(this.forceUpdate);
@@ -634,9 +537,7 @@
     Gauge.prototype.setLimitSpeed = function(value,units) {
       if (value !== 0 && !value) {
         this.setOptions({
-          upperZone: {
-              show: false
-          }
+          upperZone: {show: false}
         });
       } else {
         value = this.parseValueUpdateRanges(value,units);
@@ -653,13 +554,9 @@
 
     Gauge.prototype.setInfo = function(value) {
       if (!value) {
-        this.setOptions({
-          infoText: ''
-        });
+        this.setOptions({infoText: ''});
       } else {
-        this.setOptions({
-          infoText: value
-        });
+        this.setOptions({infoText: value});
       }
       this.update(true);
     };
@@ -968,9 +865,41 @@
         this.ctx.restore();
       }
     
-      this.gp.forEach(function(gp) {
-        gp.update(true);
-      });
+      // Draw pointer
+      var angle, endX, endY, imgX, imgY, startX, startY, x, y;
+      angle = this.getAngle(this.displayedValue);
+      var p = this.options.pointer;
+      x = p.length*this.height * Math.cos(angle)/2;
+      y = p.length*this.height * Math.sin(angle)/2;
+
+      startX = p.strokeWidth*this.height * Math.cos(angle - Math.PI / 2);
+      startY = p.strokeWidth*this.height * Math.sin(angle - Math.PI / 2);
+      endX = p.strokeWidth*this.height * Math.cos(angle + Math.PI / 2);
+      endY = p.strokeWidth*this.height * Math.sin(angle + Math.PI / 2);
+      this.ctx.beginPath();
+      this.ctx.fillStyle = p.color;
+      this.ctx.save();
+      this.ctx.shadowColor = '#000000';
+      this.ctx.shadowBlur = 1;
+      this.ctx.shadowOffsetX = 2;
+      this.ctx.shadowOffsetY = 1;
+      this.ctx.beginPath();
+      this.ctx.moveTo(startX, startY);
+      this.ctx.lineTo(-x/10,-y/10);
+      this.ctx.lineTo(endX, endY);
+      this.ctx.lineTo(x, y);
+      this.ctx.moveTo(startX, startY);
+      this.ctx.fill();
+      this.ctx.restore();
+      if (this.img) {
+        imgX = Math.round(this.img.width * p.iconScale);
+        imgY = Math.round(this.img.height * p.iconScale);
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        this.ctx.rotate(angle + Math.PI / 180.0 * (90 + p.iconAngle));
+        this.ctx.drawImage(this.img, -imgX / 2, -imgY / 2, imgX, imgY);
+        return this.ctx.restore();
+      }
       
       return this.ctx.translate(-w, -h);
     };
