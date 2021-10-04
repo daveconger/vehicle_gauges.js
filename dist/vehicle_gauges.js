@@ -847,7 +847,7 @@
 
       // Draw target indicator
       if (this.displayedValueTarget !== null) { 
-        var triangle_size = this.options.target_options.sizeScale*20;
+        var triangle_size = this.options.target_options.sizeScale*this.height*0.04;
         this.ctx.save();
         var displayedAngleTarget = this.getAngle(this.displayedValueTarget);
         this.ctx.rotate(displayedAngleTarget);
