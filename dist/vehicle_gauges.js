@@ -137,7 +137,7 @@
         });
       }
 
-      if (force || this.displayedValue !== this.value) {
+      if (force || this.displayedValue !== this.value || this.displayedValueTarget !== this.valueTarget) {
         if (this.ctx && this.clear) {
           this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
@@ -146,6 +146,12 @@
           this.displayedValue = this.value;
         } else {
           this.displayedValue = this.displayedValue + diff / this.animationSpeed;
+        }
+        diff = this.valueTarget - this.displayedValueTarget;
+        if (Math.abs(diff / this.animationSpeed) <= 0.001) {
+          this.displayedValueTarget = this.valueTarget;
+        } else {
+          this.displayedValueTarget = this.displayedValueTarget + diff / this.animationSpeed;
         }
         this.render();
         return true;
@@ -247,8 +253,7 @@
       color: "#000000",
       iconPath: null,
       iconScale: 1.0,
-      iconAngle: 0,
-      targ: false
+      iconAngle: 0
     };
     GaugePointer.prototype.img = null;
 
@@ -285,25 +290,6 @@
       angle = this.gauge.getAngle.call(this, this.displayedValue);
       x = this.length * Math.cos(angle);
       y = this.length * Math.sin(angle);
-
-      // Draw triangle on perimeter for target value
-      if (this.options.targ) {
-        var triangle_size = this.strokeWidth/20;
-        this.ctx.save();
-        this.ctx.translate(x,y);
-        this.ctx.rotate(angle + Math.PI / 180.0 * 90);
-        this.ctx.beginPath();
-        this.ctx.fillStyle = this.options.color;
-        this.ctx.shadowColor = '#000000';
-        this.ctx.shadowBlur = 1;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 1;
-        this.ctx.moveTo(0,0);
-        this.ctx.lineTo(triangle_size,-triangle_size);
-        this.ctx.lineTo(-triangle_size,-triangle_size);
-        this.ctx.fill();
-        return this.ctx.restore();
-      }
 
       startX = this.strokeWidth * Math.cos(angle - Math.PI / 2);
       startY = this.strokeWidth * Math.sin(angle - Math.PI / 2);
@@ -348,7 +334,9 @@
     Gauge.prototype.maxValue = 80;  
     Gauge.prototype.minValue = 0;  
     Gauge.prototype.displayedAngle = 0;  
-    Gauge.prototype.displayedValue = 0;  
+    Gauge.prototype.displayedValue = 0;
+    Gauge.prototype.valueTarget = null;
+    Gauge.prototype.displayedValueTarget = null;
     Gauge.prototype.lineWidth = 40;  
     Gauge.prototype.paddingTop = 0.1;  
     Gauge.prototype.paddingBottom = 0.1;  
@@ -386,8 +374,7 @@
         length: 0.95,
         strokeWidth: 0.02,
         color: '#333333DD', //pointer color
-        iconScale: 1.0,
-        targ: false
+        iconScale: 1.0
       },
       angle: -0.15,
       scale: 1,
@@ -610,32 +597,13 @@
 
     Gauge.prototype.setTargetSpeed = function(value,units) {
       // Remove target pointer if no value and force update
-      if (value !== 0 && !value && this.gp.length > 1) {
-        this.gp = this.gp.slice(0,1);
+      if (value !== 0 && !value) {
+        this.displayedValueTarget = null;
+        this.valueTarget = null;
         this.forceUpdate = true;
       } else {
-        // Add new target pointer if it doesn't exist
-        if (this.gp.length == 1) {
-          var gp = new GaugePointer(this);
-          gp.setOptions({
-            length: this.options.target_options.distFromCenter,
-            strokeWidth: this.options.target_options.sizeScale,
-            color: this.options.target_options.color,
-            targ: true
-          });
-          this.gp.push(gp);
-        }
-        
-        // Parse and convert value
-        value = this.parseValueUpdateRanges(value,units);
-
-        // Update pointer
-        this.gp[1].value = value;
-        this.gp[1].setOptions({
-          minValue: this.minValue,
-          maxValue: this.maxValue,
-          angle: this.options.angle
-        });
+        // Parse and convert value and set target speed
+        this.valueTarget = this.parseValueUpdateRanges(value,units);
       }
 
       AnimationUpdater.add(this);
@@ -949,7 +917,7 @@
       // Update gauge pointers
       this.ctx.translate(w, h);
 
-      // Draw text
+      // Draw numeral display
       if (!this.options.hideNumeralDisplay) {
         var numeralDisplayUnits = this.options.primaryDisplayUnits;
         if (this.options.numeralDisplayUnits.length) {
@@ -968,6 +936,7 @@
         this.ctx.fillText(numeralDisplayUnits,17*this.height/200,this.height*0.235);
       }
 
+      // Draw info display
       if (this.options.infoText.length > 0) {
         this.ctx.fillStyle = '#CCCCCC99';
         this.ctx.rect(-this.height*0.6/2,this.height*0.27,this.height*0.6,this.height*0.1);
@@ -979,6 +948,26 @@
         this.ctx.fillText(this.options.infoText,0,this.height*0.34);
       }
 
+      // Draw target indicator
+      if (this.displayedValueTarget) { 
+        var triangle_size = this.options.target_options.sizeScale*20;
+        this.ctx.save();
+        var displayedAngleTarget = this.getAngle(this.displayedValueTarget);
+        this.ctx.rotate(displayedAngleTarget);
+        this.ctx.beginPath();
+        this.ctx.fillStyle = this.options.target_options.color;
+        this.ctx.shadowColor = '#000000';
+        this.ctx.shadowBlur = 1;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 1;
+        this.ctx.translate(this.options.target_options.distFromCenter*this.height/2,0)
+        this.ctx.moveTo(0,0);
+        this.ctx.lineTo(triangle_size,-triangle_size);
+        this.ctx.lineTo(triangle_size,triangle_size);
+        this.ctx.fill();
+        this.ctx.restore();
+      }
+    
       this.gp.forEach(function(gp) {
         gp.update(true);
       });
