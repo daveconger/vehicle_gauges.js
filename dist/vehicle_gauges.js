@@ -350,6 +350,10 @@
     }
 
     Gauge.prototype.setOptions = function(options) {
+      var input_units_changed = primary_display_units_changed =
+        secondary_display_units_changed = range_changed =
+        tick_divs_not_supplied = primary_labels_not_supplied =
+        secondary_labels_not_supplied = false;
       if (options == null) {
         options = null;
       } else {
@@ -362,7 +366,6 @@
           (this.options.secondaryDisplayUnits != options.secondaryDisplayUnits);
 
         // Check if max/min values have changed
-        var range_changed = false;
         if (options.maxValue && (this.maxValue != options.maxValue)) {
           this.maxValue = options.maxValue;
           range_changed = true;
@@ -374,6 +377,12 @@
 
         // Check if tick divisions are supplied
         var tick_divs_not_supplied = !options.ticks || !options.ticks.divisions;
+
+        // Check if labels are supplied
+        var primary_labels_not_supplied = !options.primaryLabels ||
+          !options.primaryLabels.labels;
+        var secondary_labels_not_supplied = !options.secondaryLabels ||
+          !options.secondaryLabels.labels;
       }
 
       Gauge.__super__.setOptions.call(this, options);
@@ -403,7 +412,7 @@
       // If units or range has changed, update labels and ticks
       if (input_units_changed || range_changed) {
         // Generate primary labels
-        if (this.options.primaryLabels.labels.length == 0 || primary_display_units_changed) {
+        if (primary_labels_not_supplied || primary_display_units_changed) {
 
           var primary_labels = this.generateLabels(this.options.primaryDisplayUnits,this.options.maxPrimaryTicks);
           this.options.primaryLabels.labels = primary_labels.labels;
@@ -416,7 +425,7 @@
         }
 
         // Generate secondary labels
-        if (this.options.secondaryLabels.labels.length == 0 || secondary_display_units_changed) {
+        if (secondary_labels_not_supplied || secondary_display_units_changed) {
 
           this.options.secondaryLabels.labels =
             this.generateLabels(this.options.secondaryDisplayUnits,this.options.maxSecondaryTicks).labels;
