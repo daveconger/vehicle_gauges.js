@@ -392,12 +392,12 @@
       if (!this.options.originX) {
         this.originX = this.canvas.width/2;
       } else {
-        this.originX = this.options.originX;
+        this.originX = this.options.originX*this.displayScale;
       }
       if (!this.options.originY) {
         this.originY = this.canvas.height/2;
       } else {
-        this.originY = this.options.originY;
+        this.originY = this.options.originY*this.displayScale;
       }
 
       // If units or range has changed, update labels and ticks
@@ -606,7 +606,7 @@
       re = /\d+\.?\d?/;
       match = font.match(re)[0];
       rest = font.slice(match.length);
-      fontsize = parseFloat(match) * this.displayScale * this.height/200;
+      fontsize = parseFloat(match) * this.height/100;
       this.ctx.font = fontsize + rest;
       this.ctx.fillStyle = staticLabels.color || "#000000";
       this.ctx.textBaseline = "bottom";
@@ -619,7 +619,7 @@
             font = value.font || staticLabels.font;
             match = font.match(re)[0];
             rest = font.slice(match.length);
-            fontsize = parseFloat(match) * this.displayScale * this.height/200;
+            fontsize = parseFloat(match) * this.height/100;
             this.ctx.font = fontsize + rest;
             rotationAngle = this.getAngle(value.value) - 3 * Math.PI / 2;
             this.ctx.rotate(rotationAngle);
@@ -821,12 +821,12 @@
           numeralDisplayUnits = this.options.numeralDisplayUnits;
         }
         var unit_conversion_scale = this.conversionMatrix[this.options.defaultInputUnits][numeralDisplayUnits];
-        this.ctx.font = 'bold ' + 15*this.displayScale*this.height/200 + 'px sans-serif';
+        this.ctx.font = 'bold ' + 15*this.height/100 + 'px sans-serif';
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "right";
         this.ctx.fillText(formatNumber(this.displayedValue*unit_conversion_scale,0),15*this.height/200,this.height*0.235);
-        this.ctx.font = 5*this.displayScale*this.height/200 + 'px sans-serif';
+        this.ctx.font = 5*this.height/100 + 'px sans-serif';
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "left";
@@ -838,7 +838,7 @@
         this.ctx.fillStyle = '#CCCCCC99';
         this.ctx.rect(-this.height*0.6/2,this.height*0.27,this.height*0.6,this.height*0.1);
         this.ctx.fill();
-        this.ctx.font = 'italic ' + 5*this.displayScale*this.height/200 + 'px sans-serif';
+        this.ctx.font = 'italic ' + 5*this.height/100 + 'px sans-serif';
         this.ctx.fillStyle = '#000000'
         this.ctx.textBaseline = "baseline";
         this.ctx.textAlign = "center";
